@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/Users/marcpham/CLionProjects/CS3353/program4_cs3353  /build",
+  "command": "/usr/bin/clang++   -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk -Wall -Wextra -pedantic -o CMakeFiles/main.dir/hw4.cpp.o -c \"/Users/marcpham/CLionProjects/CS3353/program4_cs3353  /hw4.cpp\"",
+  "file": "/Users/marcpham/CLionProjects/CS3353/program4_cs3353  /hw4.cpp",
+  "output": "CMakeFiles/main.dir/hw4.cpp.o"
+},
+{
+  "directory": "/Users/marcpham/CLionProjects/CS3353/program4_cs3353  /build",
+  "command": "/usr/bin/clang++   -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk -Wall -Wextra -pedantic -o CMakeFiles/main.dir/hw4test.cpp.o -c \"/Users/marcpham/CLionProjects/CS3353/program4_cs3353  /hw4test.cpp\"",
+  "file": "/Users/marcpham/CLionProjects/CS3353/program4_cs3353  /hw4test.cpp",
+  "output": "CMakeFiles/main.dir/hw4test.cpp.o"
+}
+]
