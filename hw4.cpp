@@ -5,6 +5,10 @@
 
 using namespace std;
 
+float overloaded(float& x) {
+    return std::min(x + (float)0.2, std::max((float)0.999, x));
+}
+
 pair< vector<int>, float >  assign(int N, int E, int M, float **prob)
 {
     vector <int> res0;
@@ -121,10 +125,212 @@ pair< vector<int>, float >  assign(int N, int E, int M, float **prob)
 pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
 {
     vector <int> res0;
-    float p = prob[N-1][M-1];
+    float p = 1;
 
-    for (int i =0; i < N; i++)
-        res0.push_back(0);	
+    if (E < N) {
+        throw std::invalid_argument("The rescue fails because there is not enough energy to supply at least 1 energy to each vehicle!");
+    }
+
+    E = std::min(E, M*N); // Any energy beyond the value of M*N will not lead to any greater chance of success.
+
+    // Base Cases have been checked.
+    if (N == 1) { // Assume that we have 2 overloads at the start.
+        // The overloaded probability is always better.
+        res0.push_back(-E);
+        p = overloaded(prob[0][E - 1]);
+        return make_pair(res0, p);
+    } else if (N == E && N > 1) {
+
+        // O(2n) to find the first and second maximum.
+        float best_prob = -1;
+        int i_best = -1;
+        for(int k = 0; k < N; k++) {
+            if (prob[k][0] > best_prob) {
+                best_prob = prob[k][0];
+                i_best = k;
+            }
+        }
+
+        float second_best_prob = -1;
+        int i_second = -1;
+        for(int k = 0; k < N; k++) {
+            if (prob[k][0] > second_best_prob && k != i_best) {
+                second_best_prob = prob[k][0];
+                i_second = k;
+            }
+        }
+        for(int k = 0; k < N; k++) {
+            if (k == i_best || k == i_second) {
+                p *= overloaded(prob[k][0]);
+                res0.push_back(-1);
+            } else {
+                p *= prob[k][0]; // Gets the probability of giving 0+1 energy to the kth vehicle.
+                res0.push_back(1); // Give 1 energy to each vehicle.
+            }
+        }
+        
+        return make_pair(res0, p);
+    }
+
+    // Storage Needed
+    float PROB[N][E][3]; // 3 is for the number of overloads 0, 1, or 2.
+    float choice[N][E][3];
+
+    // Initialize Base Case where the amount of energy is equal to the number of vehicles.
+    int size_diagonal = std::min(N, E);
+    float current_probability = prob[0][0];
+    // Need to update the first and second maximum as we go along.
+    for (int y = 1; y < size_diagonal; y++) {
+        // Final Probability is the probability of giving 1 energy to each vehicle (that is included at each array element).
+        current_probability *= prob[y][0];
+        PROB[y][y][0] = current_probability;
+        choice[y][y][0] = 1;
+    }
+
+    // Initialize Base Case where there is only one vehicle.
+    for (int y = 0; y < M; y++) {
+        // Final Probability is giving the energy at the current array element to that one vehicle.
+        PROB[0][y][0] = prob[0][y];
+        PROB[0][y][1] = overloaded(prob[0][y]);
+        PROB[0][y][2] = overloaded(prob[0][y]);
+        choice[0][y][0] = y+1;
+        choice[0][y][1] = -(y+1);
+        choice[0][y][2] = -(y+1);
+    }
+    for (int y = M; y < E; y++) {
+        // For scenarios where there is more energy than the one vehicle can take.
+        PROB[0][y][0] = prob[0][M - 1];
+        PROB[0][y][1] = overloaded(prob[0][M-1]);
+        PROB[0][y][2] = overloaded(prob[0][M-1]);
+        choice[0][y][0] = M;
+        choice[0][y][1] = -M;
+        choice[0][y][2] = -M;
+    }
+
+    // Iteration
+    float currentValue = -1;
+    // Calculating the PROBability of success for vehicles 0..p given q + 1 energy.
+    for (int p = 1; p < N; p++) {
+        for (int q = p + 1; q < E; q++) {
+            // cout << "Calculating PROB at p=" << p << " and q=" << q << "\n";
+            // cout << "\tTotal Energy: " << q + 1 << "\n";
+
+            PROB[p][q][0] = -1;
+            
+            // Same as assign()
+            for (int k = 0; k < min(M, q + 1 - p); k++) {
+                // cout << "\t" << k+1 << " and " << q - k << " energy: " << "";
+                // cout << PROB[p - 1][q - k - 1] << " * " << prob[p][k] << "\n";
+                
+                currentValue = PROB[p - 1][q - k - 1][0] * prob[p][k];
+                if(currentValue > PROB[p][q][0]) {
+                    PROB[p][q][0] = currentValue;
+                    choice[p][q][0] = k + 1;
+                }
+            }
+        }
+    }
+    for (int p = 1; p < N; p++) {
+        for (int q = p; q < E; q++) {
+
+            // We might just use the previous (accounts for not overloading at all).
+            PROB[p][q][1] = -1; // When you have one overload.
+            for (int k = 0; k < min(M, q + 1 - p); k++) { // Check all if we don't overload yet.
+                currentValue = PROB[p - 1][q - k - 1][1] * prob[p][k];
+                if(currentValue > PROB[p][q][1]) {
+                    PROB[p][q][1] = currentValue;
+                    choice[p][q][1] = k + 1;
+                }
+            }
+            for (int k = 0; k < min(M, q + 1 - p); k++) { // Check all if we overload the current one.
+                currentValue = PROB[p - 1][q - k - 1][0] * overloaded(prob[p][k]);
+                if(currentValue > PROB[p][q][1]) {
+                    PROB[p][q][1] = currentValue;
+                    choice[p][q][1] = -(k + 1);
+                }
+            }
+
+            // We can use the previous (accounts for not overloading at all or just one overload).
+            PROB[p][q][2] = -1; // When you have two overloads.
+            for (int k = 0; k < min(M, q + 1 - p); k++) { // Check all if we don't overload yet.
+                currentValue = PROB[p - 1][q - k - 1][2] * prob[p][k];
+                if(currentValue > PROB[p][q][2]) {
+                    PROB[p][q][2] = currentValue;
+                    choice[p][q][2] = k + 1;
+                }
+            }
+            for (int k = 0; k < min(M, q + 1 - p); k++) { // Check all if we overload the current one and still have one left.
+                currentValue = PROB[p - 1][q - k - 1][1] * overloaded(prob[p][k]);
+                if(currentValue > PROB[p][q][2]) {
+                    PROB[p][q][2] = currentValue;
+                    choice[p][q][2] = -(k + 1);
+                }
+            }
+        }
+    }
+
+    p = PROB[N-1][E-1][2];
+
+    // Get all choices of given energy to vehicles.
+    int total_energy = E;
+    int current_vehicle = N-1;
+    int overloads_left = 2;
+    while (total_energy > 0) {
+        cout << choice[current_vehicle][total_energy - 1][overloads_left] << " ";
+        res0.push_back(choice[current_vehicle][total_energy - 1][overloads_left]);
+        if (choice[current_vehicle][total_energy - 1][overloads_left] < 0) {
+            total_energy += choice[current_vehicle][total_energy - 1][overloads_left]; // Add because it is negative.
+            overloads_left--;
+        } else {
+            total_energy -= choice[current_vehicle][total_energy - 1][overloads_left];
+        }
+        current_vehicle--;
+    }
+    std::reverse(res0.begin(), res0.end());
+
+
+    cout << "Printing Full Array.\n";
+    for(int k = 0; k < 3; k++) {
+        cout << "For " << k << " Overloads:\n";
+        for (int p = 0; p < N; p++) {
+            for (int q = 0; q < E; q++) {
+                cout << PROB[p][q][k] << " ";
+            }
+            cout << "\n";
+        }
+    }
+    cout << "\n";
+    cout << "Printing Choice Array.\n";
+    for(int k = 0; k < 3; k++) {
+        cout << "For " << k << " Overloads:\n";
+        for (int p = 0; p < N; p++) {
+            for (int q = 0; q < E; q++) {
+                cout << choice[p][q][k] << " ";
+            }
+            cout << "\n";
+        }
+    }
+    cout << "\n";
+
+
+
+
+
+    // cout << "Printing Original Probability.\n";
+    // for (int p = 0; p < N; p++) {
+    //     for (int q = 0; q < M; q++) {
+    //         cout << prob[p][q] << " ";
+    //     }
+    //     cout << "\n";
+    // }
+    // cout << "\nPrinting Updated Probability.\n";
+    // for (int p = 0; p < N; p++) {
+    //     for (int q = 0; q < M; q++) {
+    //         float x = prob[p][q];
+    //         cout << std::min(x + (float)0.2, std::max((float)0.999, x)) << " ";
+    //     }
+    //     cout << "\n";
+    // }
     return make_pair(res0, p);
 
 }
