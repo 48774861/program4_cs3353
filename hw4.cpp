@@ -245,19 +245,19 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
         }
     }
     for (int p = 1; p < N; p++) {
-        for (int q = p; q < E; q++) {
+        for (int q = p + 1; q < E; q++) {
 
             // We might just use the previous (accounts for not overloading at all).
             PROB[p][q][1] = PROB[p][q][0]; // When you have one overload.
             choice[p][q][1] = choice[p][q][0];
-            for (int k = 0; k < min(M, q + 1 - p); k++) { // Check all if we don't overload yet.
+            for (int k = 0; k < min(M, q + 1 - p - 1); k++) { // Check all if we don't overload yet.
                 currentValue = PROB[p - 1][q - k - 1][1] * prob[p][k];
                 if(currentValue > PROB[p][q][1]) {
                     PROB[p][q][1] = currentValue;
                     choice[p][q][1] = k + 1;
                 }
             }
-            for (int k = 0; k < min(M, q + 1 - p); k++) { // Check all if we overload the current one.
+            for (int k = 0; k < min(M, q + 1 - p - 1); k++) { // Check all if we overload the current one.
                 currentValue = PROB[p - 1][q - k - 2][0] * overloaded(prob[p][k]); // Reduce the remaining energy by 1 more for the overload cost.
                 if(currentValue > PROB[p][q][1]) {
                     PROB[p][q][1] = currentValue;
@@ -267,7 +267,7 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
         }
     }
     for (int p = 1; p < N; p++) {
-        for (int q = p; q < E; q++) {
+        for (int q = p + 2; q < E; q++) {
 
             // We can use the previous (accounts for not overloading at all or just one overload).
             PROB[p][q][2] = PROB[p][q][1]; // When you have two overloads.
@@ -279,7 +279,7 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
             if(p == 2)
                 cout << "\tPROB[" << 1 << "][" << 1 << "][" << 2 << "] at the start of p = 2 is " << PROB[1][1][2] << "\n";
 
-            for (int k = 0; k < min(M, q + 1 - p); k++) { // Check all if we don't overload yet.
+            for (int k = 0; k < min(M, q + 1 - p - 2); k++) { // Check all if we don't overload yet.
                 currentValue = PROB[p - 1][q - k - 1][2] * prob[p][k];
                 // cout << "\tCurrent Value of PROB[" << p - 1 << "][" << q - k - 1 << "][" << 2 << "] is " << PROB[p - 1][q - k - 1][2] << "\n";
                 cout << "\tCurrent Value of is " << PROB[p - 1][q - k - 1][2] << " * " << prob[p][k] << "\n";
@@ -293,7 +293,7 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
             }
             if(p == 1)
                 cout << "\tPROB[" << p << "][" << q << "][" << 2 << "] in middle is " << PROB[p][q][2] << "\n";
-            for (int k = 0; k < min(M, q + 1 - p); k++) { // Check all if we overload the current one and still have one left.
+            for (int k = 0; k < min(M, q + 1 - p - 2); k++) { // Check all if we overload the current one and still have one left.
                 currentValue = PROB[p - 1][q - k - 2][1] * overloaded(prob[p][k]);
                 cout << "\tCurrent Value of is " << PROB[p - 1][q - k - 2][1] << " * " << overloaded(prob[p][k]) << "\n";
                 cout << "\tCurrent Value of PROB[" << p - 1 << "][" << q - k - 2 << "][" << 2 << "] is " << PROB[p - 1][q - k - 1][2] << "\n"; // The issue is that the -2 causes errors for a negative index.  We can change the k loop requirements to min q+1-p - overloads
@@ -321,6 +321,7 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
         res0.push_back(choice[current_vehicle][total_energy - 1][overloads_left]);
         if (choice[current_vehicle][total_energy - 1][overloads_left] < 0) {
             total_energy += choice[current_vehicle][total_energy - 1][overloads_left]; // Add because it is negative.
+            total_energy -= 1; // Subtract 1 as the cost of the overloading.
             overloads_left--;
         } else {
             total_energy -= choice[current_vehicle][total_energy - 1][overloads_left];
