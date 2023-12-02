@@ -11,7 +11,7 @@ pair< vector<int>, float  >  assign2(int N, int E, int M, float **prob);
 int main(int argc, char *argv[])
 {
    // ifstream ifile(argv[1]);
-   ifstream ifile("../hw4test.txt");
+   ifstream ifile("../random_test.txt");
 
    int N, E, M;
    ifile >> N >> E >> M;
