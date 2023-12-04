@@ -21,7 +21,7 @@ pair< vector<int>, float >  assign(int N, int E, int M, float **prob)
     E = std::min(E, M*N); // Any energy beyond the value of M*N will not lead to any greater chance of success.
 
     // Base Cases have been checked.
-    if (N == 1) { // Do we have to account for E or M being negative?
+    if (N == 1) {
         res0.push_back(E);
         return make_pair(res0, prob[0][E - 1]);
     } else if (N == E) {
@@ -131,9 +131,6 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
         throw std::invalid_argument("The rescue fails because there is not enough energy to supply at least 1 energy to each vehicle!");
     }
 
-    
-    // E = std::min(E, M*N); // Any energy beyond the value of M*N will not lead to any greater chance of success.
-
     // Base Cases have been checked.
     if (N == 1) { // Assume that we have 2 overloads at the start.
         if (E == 1) { // Only 1 energy, so no overloads possible.
@@ -156,7 +153,7 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
         }
         
         return make_pair(res0, p);
-    } else if (N == E && N > 1) { // Must have no overloads because there is no energy to overload.
+    } else if (N == E) { // Must have no overloads because there is no energy to overload.
         for(int k = 0; k < N; k++) {
             p *= prob[k][0]; // Gets the probability of giving 0+1 energy to the kth vehicle.
         }
@@ -244,6 +241,13 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
             }
         }
     }
+    for (int p = 1; p < size_diagonal; p++) { 
+        // If number of vehicles = energy, the optimal probability is the probability when there are no overloads.
+        for(int overloads = 1; overloads < 3; overloads++) {
+            PROB[p][p][overloads] = PROB[p][p][0];
+            choice[p][p][overloads] = choice[p][p][0];
+        }
+    }
     for (int p = 1; p < N; p++) {
         for (int q = p + 1; q < E; q++) {
 
@@ -266,46 +270,32 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
             }
         }
     }
+    for (int p = 1; p < size_diagonal; p++) { 
+        // If number of vehicles = energy + 1, the optimal probability is the probability when there is only 1 overload.
+        PROB[p][p+1][2] = PROB[p][p+1][1];
+        choice[p][p+1][2] = choice[p][p+1][1];
+    }
     for (int p = 1; p < N; p++) {
         for (int q = p + 2; q < E; q++) {
 
             // We can use the previous (accounts for not overloading at all or just one overload).
             PROB[p][q][2] = PROB[p][q][1]; // When you have two overloads.
             choice[p][q][2] = choice[p][q][1];
-            // cout << "Loop Limit is " << min(M, q + 1 - p) << "\n";
-            if(p == 1)
-                cout << "Setting PROB[" << p << "][" << q << "][" << 2 << "] with " << PROB[p][q][1] << "\n";
-                cout << "\t\tPROB[" << 1 << "][" << 1 << "][" << 2 << "] at the start of p = 2 is " << PROB[1][1][2] << "\n";
-            if(p == 2)
-                cout << "\tPROB[" << 1 << "][" << 1 << "][" << 2 << "] at the start of p = 2 is " << PROB[1][1][2] << "\n";
 
             for (int k = 0; k < min(M, q + 1 - p - 2); k++) { // Check all if we don't overload yet.
                 currentValue = PROB[p - 1][q - k - 1][2] * prob[p][k];
-                // cout << "\tCurrent Value of PROB[" << p - 1 << "][" << q - k - 1 << "][" << 2 << "] is " << PROB[p - 1][q - k - 1][2] << "\n";
-                cout << "\tCurrent Value of is " << PROB[p - 1][q - k - 1][2] << " * " << prob[p][k] << "\n";
-                // cout << "Comparing to " << PROB[p][q][2] << "\n";
                 if(currentValue > PROB[p][q][2]) {
-                    
-                     cout << "\tSetting PROB[" << p << "][" << q << "][" << 2 << "] with " << currentValue << "\n";
                     PROB[p][q][2] = currentValue;
                     choice[p][q][2] = k + 1;
                 }
             }
-            if(p == 1)
-                cout << "\tPROB[" << p << "][" << q << "][" << 2 << "] in middle is " << PROB[p][q][2] << "\n";
             for (int k = 0; k < min(M, q + 1 - p - 2); k++) { // Check all if we overload the current one and still have one left.
                 currentValue = PROB[p - 1][q - k - 2][1] * overloaded(prob[p][k]);
-                cout << "\tCurrent Value of is " << PROB[p - 1][q - k - 2][1] << " * " << overloaded(prob[p][k]) << "\n";
-                cout << "\tCurrent Value of PROB[" << p - 1 << "][" << q - k - 2 << "][" << 2 << "] is " << PROB[p - 1][q - k - 1][2] << "\n"; // The issue is that the -2 causes errors for a negative index.  We can change the k loop requirements to min q+1-p - overloads
-                // cout << "Current Value of PROB[" << p - 1 << "][" << q - k - 1 << "][" << 2 << "] is " << PROB[p - 1][q - k - 1][2] << "\n";
-                // cout << "Comparing to " << PROB[p][q][2] << "\n";
                 if(currentValue > PROB[p][q][2]) {
                     PROB[p][q][2] = currentValue;
                     choice[p][q][2] = -(k + 1);
                 }
             }
-            if(p == 1)
-                cout << "\tPROB[" << p << "][" << q << "][" << 2 << "] should be finally " << PROB[p][q][2] << "\n";
         }
     }
 
@@ -353,10 +343,6 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
         }
     }
     cout << "\n";
-
-
-
-
 
     // cout << "Printing Original Probability.\n";
     // for (int p = 0; p < N; p++) {
