@@ -65,8 +65,6 @@ pair< vector<int>, float >  assign(int N, int E, int M, float **prob)
     // Calculating the PROBability of success for vehicles 0..p given q + 1 energy.
     for (int p = 1; p < N; p++) {
         for (int q = p + 1; q < E; q++) {
-            // cout << "Calculating PROB at p=" << p << " and q=" << q << "\n";
-            // cout << "\tTotal Energy: " << q + 1 << "\n";
 
             PROB[p][q] = -1;
             /**
@@ -75,8 +73,6 @@ pair< vector<int>, float >  assign(int N, int E, int M, float **prob)
              *  Assuming that decreasing energy always decreases the likelihood of success.
             */
             for (int k = 0; k < min(M, q + 1 - p); k++) {
-                // cout << "\t" << k+1 << " and " << q - k << " energy: " << "";
-                // cout << PROB[p - 1][q - k - 1] << " * " << prob[p][k] << "\n";
                 
                 // q - k is the energy we have left, so q - k - 1 is the index of that energy.
                 currentValue = PROB[p - 1][q - k - 1] * prob[p][k];
@@ -99,23 +95,6 @@ pair< vector<int>, float >  assign(int N, int E, int M, float **prob)
         current_vehicle--;
     }
     std::reverse(res0.begin(), res0.end());
-    
-    // cout << "Printing Full Array.\n";
-    // for (int p = 0; p < N; p++) {
-    //     for (int q = 0; q < E; q++) {
-    //         cout << PROB[p][q] << " ";
-    //     }
-    //     cout << "\n";
-    // }
-    // cout << "\n";
-    // cout << "Printing Choice Array.\n";
-    // for (int p = 0; p < N; p++) {
-    //     for (int q = 0; q < E; q++) {
-    //         cout << choice[p][q] << " ";
-    //     }
-    //     cout << "\n";
-    // }
-    // cout << "\n";
 
     return make_pair(res0, p);
 
@@ -301,13 +280,11 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
 
     p = PROB[N-1][E-1][2];
     
-
     // Get all choices of given energy to vehicles.
     int total_energy = E;
     int current_vehicle = N-1;
     int overloads_left = 2;
     while (total_energy > 0) {
-        cout << choice[current_vehicle][total_energy - 1][overloads_left] << " ";
         res0.push_back(choice[current_vehicle][total_energy - 1][overloads_left]);
         if (choice[current_vehicle][total_energy - 1][overloads_left] < 0) {
             total_energy += choice[current_vehicle][total_energy - 1][overloads_left]; // Add because it is negative.
@@ -320,45 +297,6 @@ pair< vector<int>, float >  assign2(int N, int E, int M, float **prob)
     }
     std::reverse(res0.begin(), res0.end());
 
-
-    cout << "Printing Full Array.\n";
-    for(int k = 0; k < 3; k++) {
-        cout << "For " << k << " Overloads:\n";
-        for (int p = 0; p < N; p++) {
-            for (int q = 0; q < E; q++) {
-                cout << PROB[p][q][k] << " ";
-            }
-            cout << "\n";
-        }
-    }
-    cout << "\n";
-    cout << "Printing Choice Array.\n";
-    for(int k = 0; k < 3; k++) {
-        cout << "For " << k << " Overloads:\n";
-        for (int p = 0; p < N; p++) {
-            for (int q = 0; q < E; q++) {
-                cout << choice[p][q][k] << " ";
-            }
-            cout << "\n";
-        }
-    }
-    cout << "\n";
-
-    // cout << "Printing Original Probability.\n";
-    // for (int p = 0; p < N; p++) {
-    //     for (int q = 0; q < M; q++) {
-    //         cout << prob[p][q] << " ";
-    //     }
-    //     cout << "\n";
-    // }
-    // cout << "\nPrinting Updated Probability.\n";
-    // for (int p = 0; p < N; p++) {
-    //     for (int q = 0; q < M; q++) {
-    //         float x = prob[p][q];
-    //         cout << std::min(x + (float)0.2, std::max((float)0.999, x)) << " ";
-    //     }
-    //     cout << "\n";
-    // }
     return make_pair(res0, p);
 
 }
